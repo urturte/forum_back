@@ -5,8 +5,6 @@ import UserSchema from "../models/userModel.js";
 import auth from "../middlewares/auth.js";
 import mongoose from "mongoose";
 
-const ObjectId = mongoose.Types.ObjectId;
-
 async function askQuestion(req, res) {
   const question = new QuestionSchema({
     title: req.body.title,
@@ -32,7 +30,7 @@ async function askQuestion(req, res) {
     })
     .catch((err) => {
       console.log("Error occured", err);
-      res.status(404).json({ response: "Error try again" });
+      res.status(404).json({ response: "Error try again", error: err });
     });
 }
 
@@ -40,7 +38,7 @@ async function getAllQuestions(req, res) {
   QuestionSchema.find()
     // .sort("name")
     .then((result) => {
-      return res.status(200).json({ questions: result });
+      return res.status(200).json(result);
     })
     .catch((err) => {
       console.log("err", err);
@@ -49,7 +47,7 @@ async function getAllQuestions(req, res) {
 }
 
 function deleteQuestionById(req, res) {
-  QuestionSchema.deleteOne({ _id: req.params.id })
+  QuestionSchema.deleteOne({ _id: req.body.id })
     .then((result) => {
       return res.status(200).json({
         statusMessage: "Question was deleted succesfully",
@@ -62,7 +60,8 @@ function deleteQuestionById(req, res) {
     });
 }
 
-async function addAnswer(req, res) {
+function addAnswer(req, res) {
+  const ObjectId = mongoose.Types.ObjectId;
   const answer = new AnswerSchema({
     content: req.body.content,
     dateCreated: new Date(),
@@ -74,10 +73,11 @@ async function addAnswer(req, res) {
       console.log(result);
 
       AnswerSchema.updateOne({ _id: result._id }, { id: result._id }).exec();
-
+      const id = result._id.toString();
+      console.log("idbl", id);
       QuestionSchema.updateOne(
         { _id: req.params.id },
-        { $push: { answersIds: result._id.toString() } }
+        { $push: { answersIds: result._id } }
       ).exec();
 
       return res.status(200).json({
@@ -91,33 +91,21 @@ async function addAnswer(req, res) {
     });
 }
 
-function getQuestionsByIdWithAnswers(req, res) {
-  AnswerSchema.find({ questionId: req.params.id })
-    .then((result) => {
-      return res.status(200).json({
-        statusMessage: "Answers were found",
-        answersToQuestion: result,
-      });
-    })
-    .catch((err) => {
-      console.log("err", err);
-      res.status(404).json({ response: "Something went wrong" });
-    });
+async function getQuestionsByIdWithAnswers(req, res) {
+  const ObjectId = mongoose.Types.ObjectId;
 
-  //   .aggregate([
-  //     {
-  //       $lookup: {
-  //         from: "test.answers",
-  //         localField: "answersIds",
-  //         foreignField: "_id",
-  //         as: "questionAnswers",
-  //       },
-  //     },
-  //     { $match: { _id: new ObjectId(req.params.id) } },
-  //   ]).exec();
-  //   console.log("data", data);
-
-  //   return res.status(200).json({ questionAnswers: data });
+  const data = await QuestionSchema.aggregate([
+    {
+      $lookup: {
+        from: "answers",
+        localField: "answersIds",
+        foreignField: "_id",
+        as: "questionAnswers",
+      },
+    },
+    { $match: { _id: ObjectId(req.params.id) } },
+  ]).exec();
+  return res.status(200).json({ questionsWithAnswers: data });
 }
 
 function deleteAnswerById(req, res) {
