@@ -105,7 +105,7 @@ async function getQuestionsByIdWithAnswers(req, res) {
     },
     { $match: { _id: ObjectId(req.params.id) } },
   ]).exec();
-  return res.status(200).json({ questionsWithAnswers: data });
+  return res.status(200).json({ data });
 }
 
 function deleteAnswerById(req, res) {
