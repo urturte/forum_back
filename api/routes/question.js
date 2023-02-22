@@ -11,7 +11,7 @@ router.delete("/question/:id", auth, questionsController.deleteQuestionById);
 
 router.post("/answer/:id", auth, questionsController.addAnswer);
 
-router.get("/questions/:id", questionsController.getQuestionsByIdWithAnswers);
+router.get("/answers/:id", questionsController.getQuestionsByIdWithAnswers);
 
 router.delete("/answer/:id", auth, questionsController.deleteAnswerById);
 
