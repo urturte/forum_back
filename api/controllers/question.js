@@ -70,14 +70,11 @@ function addAnswer(req, res) {
   answer
     .save()
     .then((result) => {
-      console.log(result);
-
       AnswerSchema.updateOne({ _id: result._id }, { id: result._id }).exec();
       const id = result._id.toString();
-      console.log("idbl", id);
       QuestionSchema.updateOne(
         { _id: req.params.id },
-        { $push: { answersIds: result._id } }
+        { answered: true, $push: { answersIds: result._id } }
       ).exec();
 
       return res.status(200).json({
